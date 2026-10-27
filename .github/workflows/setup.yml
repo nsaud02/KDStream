@@ -1,37 +1,106 @@
-name: Setup KD Stream Project
+name: Build KD Stream
 
 on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  setup:
+  android:
+    name: Build Android APK
     runs-on: ubuntu-latest
+    timeout-minutes: 35
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Extract project files
+      - name: Extract project
+        run: unzip -q KDStream-GitHub-Source.zip
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.35.7'
+          channel: stable
+          cache: true
+
+      - name: Prepare platform files
+        working-directory: KDStream
+        run: python3 tool/bootstrap.py
+
+      - name: Install dependencies
+        working-directory: KDStream
+        run: flutter pub get
+
+      - name: Analyze project
+        working-directory: KDStream
+        run: flutter analyze
+
+      - name: Run tests
+        working-directory: KDStream
+        run: flutter test
+
+      - name: Build APK
+        working-directory: KDStream
+        run: flutter build apk --release
+
+      - name: Upload Android APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: KD-Stream-Android
+          path: KDStream/build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+
+  ios:
+    name: Build unsigned iOS IPA
+    runs-on: macos-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract project
+        run: unzip -q KDStream-GitHub-Source.zip
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.35.7'
+          channel: stable
+          cache: true
+
+      - name: Prepare platform files
+        working-directory: KDStream
+        run: python3 tool/bootstrap.py
+
+      - name: Install dependencies
+        working-directory: KDStream
+        run: flutter pub get
+
+      - name: Build iOS
+        working-directory: KDStream
+        run: flutter build ios --release --no-codesign
+
+      - name: Package unsigned IPA
+        working-directory: KDStream
         run: |
-          set -euo pipefail
+          mkdir -p build/unsigned/Payload
+          cp -R build/ios/iphoneos/Runner.app build/unsigned/Payload/
+          cd build/unsigned
+          zip -qr KD-Stream-unsigned.ipa Payload
 
-          unzip -q KDStream-GitHub-Source.zip -d /tmp/kdstream
-          cp -R /tmp/kdstream/KDStream/. .
-
-      - name: Save project files
-        run: |
-          set -euo pipefail
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          git add .
-          if git diff --cached --quiet; then
-            echo "Project files are already present."
-          else
-            git commit -m "Add KD Stream project files"
-            git push
-          fi
+      - name: Upload unsigned IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: KD-Stream-iOS-unsigned
+          path: KDStream/build/unsigned/KD-Stream-unsigned.ipa
+          if-no-files-found: error
