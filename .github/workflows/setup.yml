@@ -1,0 +1,37 @@
+name: Setup KD Stream Project
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract project files
+        run: |
+          set -euo pipefail
+
+          unzip -q KDStream-GitHub-Source.zip -d /tmp/kdstream
+          cp -R /tmp/kdstream/KDStream/. .
+
+      - name: Save project files
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add .
+          if git diff --cached --quiet; then
+            echo "Project files are already present."
+          else
+            git commit -m "Add KD Stream project files"
+            git push
+          fi
