@@ -19,8 +19,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Extract test project
-        run: unzip -q KDStream-Test-Source.zip
+      - name: Extract project
+        run: unzip -q KDStream-Large-Playlist.zip
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -74,8 +74,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Extract test project
-        run: unzip -q KDStream-Test-Source.zip
+      - name: Extract project
+        run: unzip -q KDStream-Large-Playlist.zip
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
