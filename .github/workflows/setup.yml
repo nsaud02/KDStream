@@ -1,4 +1,4 @@
-name: Build KD Stream
+name: Build KD Stream Test
 
 on:
   workflow_dispatch:
@@ -12,12 +12,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 35
 
+    env:
+      KD_TEST_PLAYLIST: ${{ secrets.KD_TEST_PLAYLIST }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Extract project
-        run: unzip -q KDStream-GitHub-Source.zip
+      - name: Extract test project
+        run: unzip -q KDStream-Test-Source.zip
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -50,12 +53,12 @@ jobs:
 
       - name: Build APK
         working-directory: KDStream
-        run: flutter build apk --release
+        run: flutter build apk --release --dart-define=KD_TEST_PLAYLIST="$KD_TEST_PLAYLIST"
 
       - name: Upload Android APK
         uses: actions/upload-artifact@v4
         with:
-          name: KD-Stream-Android
+          name: KD-Stream-Android-Test
           path: KDStream/build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
 
@@ -64,12 +67,15 @@ jobs:
     runs-on: macos-latest
     timeout-minutes: 40
 
+    env:
+      KD_TEST_PLAYLIST: ${{ secrets.KD_TEST_PLAYLIST }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Extract project
-        run: unzip -q KDStream-GitHub-Source.zip
+      - name: Extract test project
+        run: unzip -q KDStream-Test-Source.zip
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -88,7 +94,7 @@ jobs:
 
       - name: Build iOS
         working-directory: KDStream
-        run: flutter build ios --release --no-codesign
+        run: flutter build ios --release --no-codesign --dart-define=KD_TEST_PLAYLIST="$KD_TEST_PLAYLIST"
 
       - name: Package unsigned IPA
         working-directory: KDStream
@@ -96,11 +102,11 @@ jobs:
           mkdir -p build/unsigned/Payload
           cp -R build/ios/iphoneos/Runner.app build/unsigned/Payload/
           cd build/unsigned
-          zip -qr KD-Stream-unsigned.ipa Payload
+          zip -qr KD-Stream-Test-unsigned.ipa Payload
 
       - name: Upload unsigned IPA
         uses: actions/upload-artifact@v4
         with:
-          name: KD-Stream-iOS-unsigned
-          path: KDStream/build/unsigned/KD-Stream-unsigned.ipa
+          name: KD-Stream-iOS-Test-unsigned
+          path: KDStream/build/unsigned/KD-Stream-Test-unsigned.ipa
           if-no-files-found: error
